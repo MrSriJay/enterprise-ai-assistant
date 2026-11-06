@@ -1,0 +1,45 @@
+# Offline defaults are enough to boot the stack. Export OPENAI_API_KEY,
+# PINECONE_API_KEY, or LANGSMITH_API_KEY in the shell (or a .env file next to
+# this compose file) before `docker compose up` when you want those services.
+
+services:
+  mcp:
+    build: .
+    command: uvicorn mcp_server.server:app --host 0.0.0.0 --port 8100
+    ports:
+      - "8100:8100"
+
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      MCP_URL: http://mcp:8100/mcp
+      MCP_FALLBACK: "true"
+      LLM_ENABLED: ${LLM_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      CHAT_MODEL: ${CHAT_MODEL:-gpt-4o-mini}
+      USE_OPENAI_EMBEDDINGS: ${USE_OPENAI_EMBEDDINGS:-false}
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      PINECONE_INDEX: ${PINECONE_INDEX:-harborline-assistant}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-harborline-assistant}
+      APP_TODAY: ${APP_TODAY:-2026-11-06}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-before-any-shared-demo}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - mcp
+
+  ui:
+    build: .
+    command: streamlit run frontend/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+    environment:
+      API_BASE_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
