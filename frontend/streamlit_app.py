@@ -13,19 +13,41 @@ API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 STARTERS = {
     "viewer": {
-        "Certificate rollback": "What does the certificate rotation runbook say about rollback?",
-        "What can you do?": "What can you do?",
+        ":material/vpn_key: Certificate rollback": "What does the certificate rotation runbook say about rollback?",
+        ":material/help: What can you do?": "What can you do?",
     },
     "analyst": {
-        "Payment outages": "Summarize all outage reports related to payment failures during the last year and identify recurring root causes.",
-        "On-call engineer": "Who is the on-call engineer in the employee directory for payments?",
-        "Certificate rollback": "What does the certificate rotation runbook say about rollback?",
+        ":material/warning: Payment outages": "Summarize all outage reports related to payment failures during the last year and identify recurring root causes.",
+        ":material/badge: On-call engineer": "Who is the on-call engineer in the employee directory for payments?",
+        ":material/vpn_key: Certificate rollback": "What does the certificate rotation runbook say about rollback?",
     },
     "administrator": {
-        "Reindex": "Please reindex the knowledge base.",
-        "On-call engineer": "Who is the on-call engineer in the employee directory for payments?",
-        "Certificate rollback": "What does the certificate rotation runbook say about rollback?",
+        ":material/database: Reindex": "Please reindex the knowledge base.",
+        ":material/badge: On-call engineer": "Who is the on-call engineer in the employee directory for payments?",
+        ":material/vpn_key: Certificate rollback": "What does the certificate rotation runbook say about rollback?",
     },
+}
+
+NODE_ICONS = {
+    "input_guard": ":material/shield:",
+    "memory_load": ":material/history:",
+    "memory_save": ":material/save:",
+    "supervisor": ":material/account_tree:",
+    "retrieval_agent": ":material/search:",
+    "research_agent": ":material/travel_explore:",
+    "analysis_agent": ":material/query_stats:",
+    "mcp_agent": ":material/dns:",
+    "approval_request": ":material/approval:",
+    "approval_wait": ":material/hourglass_top:",
+    "admin_action": ":material/database:",
+    "response_agent": ":material/chat:",
+    "output_guard": ":material/verified:",
+}
+
+ROLE_ICONS = {
+    "viewer": ":material/visibility:",
+    "analyst": ":material/query_stats:",
+    "administrator": ":material/admin_panel_settings:",
 }
 
 ROLE_COLORS = {"viewer": "gray", "analyst": "blue", "administrator": "green"}
@@ -52,11 +74,15 @@ def _ensure_session() -> None:
 
 
 def _login(username: str, password: str) -> None:
-    response = httpx.post(
-        f"{API_BASE_URL}/api/auth/login",
-        json={"username": username, "password": password},
-        timeout=20,
-    )
+    try:
+        response = httpx.post(
+            f"{API_BASE_URL}/api/auth/login",
+            json={"username": username, "password": password},
+            timeout=20,
+        )
+    except httpx.HTTPError:
+        st.session_state.login_error = "The API is not running. Start it on port 8000, then sign in again."
+        return
     if response.status_code != 200:
         st.session_state.login_error = response.json().get("message", "Login failed.")
         return
@@ -119,17 +145,18 @@ def _stream(payload: dict, activity_box, answer_box) -> dict | None:
 def _render_activity(slot, activities: list[dict]) -> None:
     with slot.container(border=True):
         if not activities:
-            st.caption("Ask a question to see each agent step here.")
+            st.caption(":material/pending: Ask a question to see each agent step here.")
             return
         for activity in activities:
             node = activity.get("node") or "idle"
+            icon = NODE_ICONS.get(node, ":material/radio_button_checked:")
             state = str(activity.get("state") or "running")
             current = activity is activities[-1]
             if current:
-                st.markdown(f":material/bolt: **{node}**")
-                st.badge(state, color="blue")
+                st.markdown(f"{icon} **{node}**")
+                st.badge(state, color="blue", icon=":material/bolt:")
             else:
-                st.markdown(f"`{node}` · {state}")
+                st.markdown(f"{icon} `{node}` · {state}")
             st.caption(activity.get("detail") or "")
 
 
@@ -176,7 +203,7 @@ def _validation_badge(validation: dict) -> None:
 _ensure_session()
 
 with st.sidebar:
-    st.header("Account")
+    st.markdown("### :material/account_circle: Account")
     if "token" not in st.session_state:
         username = st.text_input("Username", value="analyst")
         password = st.text_input("Password", value="analyst123", type="password")
@@ -188,35 +215,35 @@ with st.sidebar:
             st.error(st.session_state.login_error)
 
 if "token" not in st.session_state:
-    st.title("Enterprise AI Assistant")
-    st.caption("Sign in from the sidebar. Answers stay inside the documents your role is allowed to read.")
+    st.markdown("# :material/support_agent: :primary[Enterprise AI Assistant]")
+    st.caption(":material/login: Sign in from the sidebar. Answers stay inside the documents your role is allowed to read.")
     st.stop()
 
 with st.sidebar:
     role = st.session_state.role
-    st.markdown(f"**{st.session_state.display_name}**")
-    st.badge(role, color=ROLE_COLORS.get(role, "gray"))
+    st.markdown(f":material/person: **{st.session_state.display_name}**")
+    st.badge(role, color=ROLE_COLORS.get(role, "gray"), icon=ROLE_ICONS.get(role, ":material/badge:"))
     if st.button("Log out", icon=":material/logout:", width="stretch"):
         for key in ("token", "role", "display_name", "messages", "pending_hitl", "queued_prompt"):
             st.session_state.pop(key, None)
         st.rerun()
     try:
         health = httpx.get(f"{API_BASE_URL}/api/health", timeout=5).json()
-        st.caption(f"Model · {health.get('chat_model')}")
-        st.caption(f"{health.get('chunks')} documents indexed")
+        st.caption(f":material/smart_toy: {health.get('chat_model')}")
+        st.caption(f":material/library_books: {health.get('chunks')} documents indexed")
         if health.get("langsmith"):
             st.badge("LangSmith on", color="green", icon=":material/monitoring:")
         else:
-            st.badge("LangSmith off", color="gray")
+            st.badge("LangSmith off", color="gray", icon=":material/monitoring:")
     except httpx.HTTPError:
         st.warning("API is not reachable.")
 
-st.title("Enterprise AI Assistant")
-st.caption("Answers from internal documents. Each agent step appears on the right while it works.")
+st.markdown("# :material/support_agent: :primary[Enterprise AI Assistant]")
+st.caption(":material/forum: Answers from internal documents. Each agent step appears on the right while it works.")
 
 chat_col, activity_col = st.columns([3, 2], gap="medium")
 with activity_col:
-    st.subheader("Agent activity")
+    st.markdown("### :material/account_tree: :primary[Agent activity]")
     activity_box = st.empty()
 _render_activity(activity_box, [])
 
@@ -231,7 +258,7 @@ with chat_col:
                 st.warning(item)
             citations = message.get("citations") or []
             if citations:
-                with st.expander(f"Evidence · {len(citations)}"):
+                with st.expander(f"Evidence · {len(citations)}", icon=":material/description:"):
                     for citation in citations:
                         st.markdown(f"**{citation['title']}**")
                         st.caption(
@@ -241,7 +268,7 @@ with chat_col:
                         if citation.get("snippet"):
                             st.markdown(citation["snippet"])
             if message.get("activities"):
-                with st.expander("Trace for this answer"):
+                with st.expander("Trace for this answer", icon=":material/timeline:"):
                     for activity in message["activities"]:
                         st.markdown(f"`{activity['node']}` · {activity['state']}")
                         st.caption(activity["detail"])
@@ -276,7 +303,7 @@ with chat_col:
 
     queued = st.session_state.get("queued_prompt")
     if not st.session_state.messages and not queued and not st.session_state.pending_hitl:
-        st.caption("Start with one of these, or type your own question.")
+        st.caption(":material/lightbulb: Start with one of these, or type your own question.")
         starters = STARTERS.get(st.session_state.role, STARTERS["viewer"])
         selected = st.pills("Suggestions", list(starters), selection_mode="single", label_visibility="collapsed")
         if selected:

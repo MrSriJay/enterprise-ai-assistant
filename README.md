@@ -4,6 +4,16 @@ Internal assistant that answers from a small knowledge base, can look up dummy e
 
 The default mode is offline. Hybrid search, the agent graph, role checks, and guardrails all run without an API key. OpenAI, Pinecone, and LangSmith are optional and used when their environment variables are set.
 
+## Interface
+
+Sign in from the sidebar. The role decides which documents and tools the assistant may use.
+
+![Sign-in screen](docs/ui-sign-in.png)
+
+An answer stays in the chat, with citations, a validation result, the source documents, and the trace for that turn. The panel on the right lists each agent step while the reply is still running.
+
+![Chat with a cited answer](docs/ui-chat.png)
+
 ## Architecture
 
 ![Architecture of the Enterprise AI Assistant](docs/architecture.png)
