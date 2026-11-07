@@ -11,7 +11,7 @@ import streamlit as st
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
-st.set_page_config(page_title="Harborline Assistant", layout="wide")
+st.set_page_config(page_title="Enterprise AI Assistant", layout="wide")
 
 
 def _auth_headers() -> dict:
@@ -127,7 +127,7 @@ def _send(message: str | None, resume: dict | None, activity_box, answer_box) ->
 
 
 _ensure_session()
-st.title("Harborline Commercial Bank")
+st.title("Enterprise AI Assistant")
 st.caption("Internal assistant. The panel on the right is the live LangGraph trace for this turn.")
 
 with st.sidebar:

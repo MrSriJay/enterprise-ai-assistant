@@ -102,7 +102,7 @@ async def _call_server(url: str, name: str, arguments: dict, timeout: float) -> 
                 "params": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": {},
-                    "clientInfo": {"name": "harborline-agent", "version": "0.1.0"},
+                    "clientInfo": {"name": "enterprise-ai-assistant", "version": "0.1.0"},
                 },
             },
         )

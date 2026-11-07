@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from app.auth.rbac import route_allowed
 
 DIRECT_REPLY = (
-    "I am the internal assistant for Harborline Commercial Bank. "
+    "I am the Enterprise AI Assistant. "
     "Ask me about policies, runbooks, architecture, incidents, or product specifications. "
     "Analysts and administrators can also use the employee directory, the service catalog, "
     "operational incident tickets, and the analytics tool."

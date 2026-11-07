@@ -1,1 +1,1 @@
-"""Harborline Commercial Bank enterprise assistant."""
+"""Enterprise AI Assistant."""

@@ -20,8 +20,8 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "Harborline Enterprise Assistant"
-    company_name: str = "Harborline Commercial Bank"
+    app_name: str = "Enterprise AI Assistant"
+    company_name: str = "Enterprise AI Assistant"
     data_dir: Path = Path("data")
     index_dir: Path | None = None
     memory_db: Path | None = None

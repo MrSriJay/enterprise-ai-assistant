@@ -44,7 +44,7 @@ SERVICES: list[dict] = [
     {"name": "payment-gateway", "tier": "critical", "owner": "Ada Lovelace", "description": "Authorizes card and wallet payments."},
     {"name": "settlement-batch", "tier": "critical", "owner": "Grace Hopper", "description": "Posts ACH and card settlement files."},
     {"name": "card-switch", "tier": "critical", "owner": "Alan Turing", "description": "Routes authorization traffic to schemes."},
-    {"name": "mobile-wallet", "tier": "high", "owner": "Katherine Johnson", "description": "Customer wallet inside the Harborline app."},
+    {"name": "mobile-wallet", "tier": "high", "owner": "Katherine Johnson", "description": "Customer wallet inside the enterprise app."},
 ]
 
 OPERATIONAL_INCIDENTS: list[dict] = [

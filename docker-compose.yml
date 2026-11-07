@@ -21,10 +21,10 @@ services:
       CHAT_MODEL: ${CHAT_MODEL:-gpt-4o-mini}
       USE_OPENAI_EMBEDDINGS: ${USE_OPENAI_EMBEDDINGS:-false}
       PINECONE_API_KEY: ${PINECONE_API_KEY:-}
-      PINECONE_INDEX: ${PINECONE_INDEX:-harborline-assistant}
+      PINECONE_INDEX: ${PINECONE_INDEX:-enterprise-ai-assistant}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
-      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-harborline-assistant}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-enterprise-ai-assistant}
       APP_TODAY: ${APP_TODAY:-2026-11-06}
       SESSION_SECRET: ${SESSION_SECRET:-change-me-before-any-shared-demo}
     ports:

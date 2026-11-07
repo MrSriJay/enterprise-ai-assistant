@@ -1,6 +1,6 @@
 # Architecture
 
-Harborline's assistant is a LangGraph workflow in front of a hybrid index, a small MCP server, and a few hard checks the model is not allowed to skip.
+The Enterprise AI Assistant is a LangGraph workflow in front of a hybrid index, a small MCP server, and a few hard checks the model is not allowed to skip.
 
 ```mermaid
 flowchart TD
@@ -135,7 +135,7 @@ The rate limiter is a token bucket per username. Capacity and refill per minute 
 
 Every node publishes an activity: timestamp, node name, state, and a sentence about what it did. FastAPI forwards those events as SSE, and Streamlit renders the active node from the latest one. The same events can be appended to `data/traces.jsonl`.
 
-LangSmith tracing is on only when both `LANGSMITH_TRACING=true` and `LANGSMITH_API_KEY` are set. Startup exports `LANGSMITH_*` and `LANGCHAIN_*`, which is what LangGraph already traces: the run, each node, and the model call. The project name defaults to `harborline-assistant`. With tracing off, tests and the offline demo make no network calls.
+LangSmith tracing is on only when both `LANGSMITH_TRACING=true` and `LANGSMITH_API_KEY` are set. Startup exports `LANGSMITH_*` and `LANGCHAIN_*`, which is what LangGraph already traces: the run, each node, and the model call. The project name defaults to `enterprise-ai-assistant`. With tracing off, tests and the offline demo make no network calls.
 
 ## Demo recording
 

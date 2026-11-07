@@ -1,6 +1,6 @@
-# Harborline Enterprise Assistant
+# Enterprise AI Assistant
 
-Internal assistant for **Harborline Commercial Bank**. It answers from a small knowledge base, can look up dummy enterprise systems, and shows each LangGraph step while it works.
+Internal assistant that answers from a small knowledge base, can look up dummy enterprise systems, and shows each LangGraph step while it works.
 
 The default mode is offline. Hybrid search, the agent graph, role checks, and guardrails all run without an API key. OpenAI, Pinecone, and LangSmith are optional and used when their environment variables are set.
 

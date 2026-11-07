@@ -33,7 +33,7 @@ REFUSALS = {
     "prompt_injection": "I can't follow instructions that try to override the assistant's rules.",
     "data_exfiltration": "I can't help move internal documents or secrets out of the bank's controls.",
     "tool_abuse": "I can't change your role or bypass authorization for a tool.",
-    "prohibited_request": "I can't help with requests that would abuse Harborline Commercial Bank's systems or customers.",
+    "prohibited_request": "I can't help with requests that would abuse enterprise systems or customers.",
 }
 
 

@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from app.tools.dispatch import TOOLS, dispatch_tool
 from app.tools.mcp_client import validate_arguments
 
-app = FastAPI(title="Harborline enterprise MCP", version="0.1.0")
+app = FastAPI(title="Enterprise AI Assistant MCP", version="0.1.0")
 
 _SCHEMAS = {
     "search_employees": {
@@ -69,7 +69,7 @@ def handle_rpc(payload: dict) -> dict:
             {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "harborline-enterprise", "version": "0.1.0"},
+                "serverInfo": {"name": "enterprise-ai-assistant", "version": "0.1.0"},
             },
         )
     if method == "notifications/initialized":
