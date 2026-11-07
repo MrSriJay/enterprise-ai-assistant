@@ -2,52 +2,7 @@
 
 The Enterprise AI Assistant is a LangGraph workflow in front of a hybrid index, a small MCP server, and a few hard checks the model is not allowed to skip.
 
-```mermaid
-flowchart TD
-    employee[Employee in Streamlit]
-    api[FastAPI SSE]
-    guard[input_guard]
-    memory[memory_load]
-    supervisor[supervisor]
-    retrieval[retrieval_agent]
-    research[research_agent]
-    analysis[analysis_agent]
-    mcp[mcp_agent]
-    approval[approval_request]
-    wait[approval_wait]
-    reindex[admin_action]
-    response[response_agent]
-    output[output_guard]
-    save[memory_save]
-    index[Local hybrid index]
-    pinecone[Pinecone dense leg]
-    sandbox[Python sandbox]
-    mcpserver[MCP server]
-
-    employee --> api --> guard --> memory --> supervisor
-    supervisor --> retrieval
-    supervisor --> research
-    supervisor --> mcp
-    supervisor --> approval
-    supervisor --> response
-    retrieval --> analysis
-    retrieval --> response
-    analysis --> response
-    research --> response
-    mcp --> response
-    approval --> wait
-    wait --> reindex
-    wait --> response
-    reindex --> response
-    response --> output --> save
-    retrieval --> index
-    research --> index
-    research --> sandbox
-    analysis --> sandbox
-    index --> pinecone
-    mcp --> mcpserver
-    reindex --> index
-```
+![Architecture of the Enterprise AI Assistant](docs/architecture.png)
 
 The graph pauses before `approval_wait`. Streamlit shows the reason and posts `resume.approved`. The API writes that flag and invokes the same checkpoint thread with no new message.
 

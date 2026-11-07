@@ -4,6 +4,14 @@ Internal assistant that answers from a small knowledge base, can look up dummy e
 
 The default mode is offline. Hybrid search, the agent graph, role checks, and guardrails all run without an API key. OpenAI, Pinecone, and LangSmith are optional and used when their environment variables are set.
 
+## Architecture
+
+![Architecture of the Enterprise AI Assistant](docs/architecture.png)
+
+Streamlit talks only to FastAPI. The supervisor picks one route, and the tool node checks the role again. Pinecone, the model, and LangSmith run only when a key is set.
+
+The graph pauses before `approval_wait`. Approving resumes the same checkpoint. Design notes are in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Run it
 
 ```powershell
