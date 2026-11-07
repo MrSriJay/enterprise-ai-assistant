@@ -11,7 +11,31 @@ import streamlit as st
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
-st.set_page_config(page_title="Enterprise AI Assistant", layout="wide")
+STARTERS = {
+    "viewer": {
+        "Certificate rollback": "What does the certificate rotation runbook say about rollback?",
+        "What can you do?": "What can you do?",
+    },
+    "analyst": {
+        "Payment outages": "Summarize all outage reports related to payment failures during the last year and identify recurring root causes.",
+        "On-call engineer": "Who is the on-call engineer in the employee directory for payments?",
+        "Certificate rollback": "What does the certificate rotation runbook say about rollback?",
+    },
+    "administrator": {
+        "Reindex": "Please reindex the knowledge base.",
+        "On-call engineer": "Who is the on-call engineer in the employee directory for payments?",
+        "Certificate rollback": "What does the certificate rotation runbook say about rollback?",
+    },
+}
+
+ROLE_COLORS = {"viewer": "gray", "analyst": "blue", "administrator": "green"}
+AVATARS = {"user": ":material/person:", "assistant": ":material/support_agent:"}
+
+st.set_page_config(
+    page_title="Enterprise AI Assistant",
+    page_icon=":material/support_agent:",
+    layout="wide",
+)
 
 
 def _auth_headers() -> dict:
@@ -92,18 +116,21 @@ def _stream(payload: dict, activity_box, answer_box) -> dict | None:
     return final
 
 
-def _render_activity(box, activities: list[dict]) -> None:
-    with box.container():
+def _render_activity(slot, activities: list[dict]) -> None:
+    with slot.container(border=True):
         if not activities:
-            st.caption("Idle")
+            st.caption("Ask a question to see each agent step here.")
             return
-        latest = activities[-1]
-        left, right = st.columns(2)
-        left.metric("Active node", latest.get("node", "idle"))
-        right.metric("Agent state", latest.get("state", "idle"))
         for activity in activities:
-            st.markdown(f"**{activity.get('node')}** · `{activity.get('state')}`")
-            st.caption(activity.get("detail", ""))
+            node = activity.get("node") or "idle"
+            state = str(activity.get("state") or "running")
+            current = activity is activities[-1]
+            if current:
+                st.markdown(f":material/bolt: **{node}**")
+                st.badge(state, color="blue")
+            else:
+                st.markdown(f"`{node}` · {state}")
+            st.caption(activity.get("detail") or "")
 
 
 def _send(message: str | None, resume: dict | None, activity_box, answer_box) -> None:
@@ -133,67 +160,93 @@ def _send(message: str | None, resume: dict | None, activity_box, answer_box) ->
     )
 
 
+def _validation_badge(validation: dict) -> None:
+    status = str(validation.get("status") or "")
+    if not status:
+        return
+    if status == "passed":
+        color = "green"
+    elif status == "pending_approval":
+        color = "orange"
+    else:
+        color = "red"
+    st.badge(status.replace("_", " "), color=color, icon=":material/verified:")
+
+
 _ensure_session()
-st.title("Enterprise AI Assistant")
-st.caption("Internal assistant. The panel on the right is the live LangGraph trace for this turn.")
 
 with st.sidebar:
-    st.subheader("Sign in")
+    st.header("Account")
     if "token" not in st.session_state:
         username = st.text_input("Username", value="analyst")
         password = st.text_input("Password", value="analyst123", type="password")
-        st.caption("Demo users: viewer / viewer123, analyst / analyst123, admin / admin123")
-        if st.button("Login", type="primary"):
+        st.caption("viewer / viewer123 · analyst / analyst123 · admin / admin123")
+        if st.button("Sign in", type="primary", icon=":material/login:", width="stretch"):
             _login(username, password)
             st.rerun()
         if st.session_state.get("login_error"):
             st.error(st.session_state.login_error)
-        st.stop()
-    st.write(f"{st.session_state.display_name} · `{st.session_state.role}`")
-    if st.button("Log out"):
-        for key in ("token", "role", "display_name", "messages", "pending_hitl"):
+
+if "token" not in st.session_state:
+    st.title("Enterprise AI Assistant")
+    st.caption("Sign in from the sidebar. Answers stay inside the documents your role is allowed to read.")
+    st.stop()
+
+with st.sidebar:
+    role = st.session_state.role
+    st.markdown(f"**{st.session_state.display_name}**")
+    st.badge(role, color=ROLE_COLORS.get(role, "gray"))
+    if st.button("Log out", icon=":material/logout:", width="stretch"):
+        for key in ("token", "role", "display_name", "messages", "pending_hitl", "queued_prompt"):
             st.session_state.pop(key, None)
         st.rerun()
     try:
         health = httpx.get(f"{API_BASE_URL}/api/health", timeout=5).json()
-        st.caption(
-            f"Model: {health.get('chat_model')} · chunks: {health.get('chunks')} · "
-            f"LangSmith: {health.get('langsmith')}"
-        )
+        st.caption(f"Model · {health.get('chat_model')}")
+        st.caption(f"{health.get('chunks')} documents indexed")
+        if health.get("langsmith"):
+            st.badge("LangSmith on", color="green", icon=":material/monitoring:")
+        else:
+            st.badge("LangSmith off", color="gray")
     except httpx.HTTPError:
         st.warning("API is not reachable.")
 
-chat_col, activity_col = st.columns([3, 2])
-activity_box = activity_col.container()
+st.title("Enterprise AI Assistant")
+st.caption("Answers from internal documents. Each agent step appears on the right while it works.")
+
+chat_col, activity_col = st.columns([3, 2], gap="medium")
 with activity_col:
     st.subheader("Agent activity")
+    activity_box = st.empty()
+_render_activity(activity_box, [])
 
 with chat_col:
     for index, message in enumerate(st.session_state.messages):
-        with st.chat_message(message["role"]):
+        with st.chat_message(message["role"], avatar=AVATARS.get(message["role"])):
             st.markdown(message["content"])
-            if message["role"] == "assistant":
-                validation = message.get("validation") or {}
-                if validation:
-                    st.caption(f"Validation: {validation.get('status', 'n/a')}")
-                for item in message.get("degradation") or []:
-                    st.warning(item)
-                citations = message.get("citations") or []
-                if citations:
-                    with st.expander("Evidence"):
-                        for citation in citations:
-                            st.markdown(
-                                f"**{citation['title']}** `{citation['doc_id']}` · "
-                                f"{citation['document_type']} · {citation['access_level']} · {citation['created_date']}"
-                            )
-                            st.caption(citation.get("snippet", ""))
-                if message.get("activities"):
-                    with st.expander("Trace for this answer"):
-                        for activity in message["activities"]:
-                            st.markdown(f"**{activity['node']}** · `{activity['state']}`")
-                            st.caption(activity["detail"])
-                helpful, poor = st.columns(2)
-                if helpful.button("Helpful", key=f"up-{index}"):
+            if message["role"] != "assistant":
+                continue
+            _validation_badge(message.get("validation") or {})
+            for item in message.get("degradation") or []:
+                st.warning(item)
+            citations = message.get("citations") or []
+            if citations:
+                with st.expander(f"Evidence · {len(citations)}"):
+                    for citation in citations:
+                        st.markdown(f"**{citation['title']}**")
+                        st.caption(
+                            f"{citation['doc_id']} · {citation['document_type']} · "
+                            f"{citation['access_level']} · {citation['created_date']}"
+                        )
+                        if citation.get("snippet"):
+                            st.markdown(citation["snippet"])
+            if message.get("activities"):
+                with st.expander("Trace for this answer"):
+                    for activity in message["activities"]:
+                        st.markdown(f"`{activity['node']}` · {activity['state']}")
+                        st.caption(activity["detail"])
+            with st.container(horizontal=True):
+                if st.button("Helpful", icon=":material/thumb_up:", key=f"up-{index}"):
                     httpx.post(
                         f"{API_BASE_URL}/api/feedback",
                         headers=_auth_headers(),
@@ -201,7 +254,7 @@ with chat_col:
                         timeout=10,
                     )
                     st.toast("Thanks. That rating is stored for the next turn.")
-                if poor.button("Not helpful", key=f"down-{index}"):
+                if st.button("Not helpful", icon=":material/thumb_down:", key=f"down-{index}"):
                     httpx.post(
                         f"{API_BASE_URL}/api/feedback",
                         headers=_auth_headers(),
@@ -212,26 +265,35 @@ with chat_col:
 
     if st.session_state.pending_hitl:
         st.warning(st.session_state.pending_hitl.get("reason", "Approval required."))
-        approve, reject = st.columns(2)
-        if approve.button("Approve reindex", type="primary"):
-            with chat_col:
-                with st.chat_message("assistant"):
-                    answer_box = st.empty()
-            _send(None, {"approved": True}, activity_box, answer_box)
-            st.rerun()
-        if reject.button("Reject"):
-            with chat_col:
-                with st.chat_message("assistant"):
-                    answer_box = st.empty()
-            _send(None, {"approved": False}, activity_box, answer_box)
+        with st.container(horizontal=True):
+            approved = st.button("Approve reindex", type="primary", icon=":material/check:")
+            rejected = st.button("Reject", icon=":material/close:")
+        if approved or rejected:
+            with st.chat_message("assistant", avatar=AVATARS["assistant"]):
+                answer_box = st.empty()
+            _send(None, {"approved": approved}, activity_box, answer_box)
             st.rerun()
 
-    prompt = st.chat_input("Ask about policies, incidents, the directory, or a reindex")
+    queued = st.session_state.get("queued_prompt")
+    if not st.session_state.messages and not queued and not st.session_state.pending_hitl:
+        st.caption("Start with one of these, or type your own question.")
+        starters = STARTERS.get(st.session_state.role, STARTERS["viewer"])
+        selected = st.pills("Suggestions", list(starters), selection_mode="single", label_visibility="collapsed")
+        if selected:
+            st.session_state.queued_prompt = starters[selected]
+            st.rerun()
+
+    typed = st.chat_input(
+        "Ask about policies, incidents, the directory, or a reindex",
+        submit_mode="disable",
+    )
+    prompt = queued or typed
+    if queued:
+        st.session_state.queued_prompt = None
     if prompt:
-        with chat_col:
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            with st.chat_message("assistant"):
-                answer_box = st.empty()
+        with st.chat_message("user", avatar=AVATARS["user"]):
+            st.markdown(prompt)
+        with st.chat_message("assistant", avatar=AVATARS["assistant"]):
+            answer_box = st.empty()
         _send(prompt, None, activity_box, answer_box)
         st.rerun()

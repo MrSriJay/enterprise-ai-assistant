@@ -1,2 +1,27 @@
 [client]
 toolbarMode = "viewer"
+
+[theme]
+base = "dark"
+primaryColor = "#1aa6b0"
+backgroundColor = "#0e1621"
+secondaryBackgroundColor = "#162232"
+textColor = "#e7eef5"
+borderColor = "#2c4158"
+linkColor = "#7fd3da"
+font = "sans serif"
+
+[theme.sidebar]
+backgroundColor = "#101a28"
+secondaryBackgroundColor = "#162232"
+
+[theme.light]
+primaryColor = "#0e7c86"
+backgroundColor = "#f4f7f8"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#1c2833"
+borderColor = "#d5dce3"
+linkColor = "#0e7c86"
+
+[theme.light.sidebar]
+backgroundColor = "#eef3f6"
