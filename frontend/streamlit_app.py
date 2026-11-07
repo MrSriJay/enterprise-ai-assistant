@@ -47,6 +47,8 @@ def _stream(payload: dict, activity_box, answer_box) -> dict | None:
     activities: list[dict] = []
     answer = ""
     final = None
+    thinking = True
+    answer_box.markdown(":shimmer[thinking...]")
     with httpx.stream(
         "POST",
         f"{API_BASE_URL}/api/chat",
@@ -66,18 +68,23 @@ def _stream(payload: dict, activity_box, answer_box) -> dict | None:
                 activities.append(event["activity"])
                 _render_activity(activity_box, activities)
             elif event["type"] == "token":
+                thinking = False
                 answer += event.get("text", "")
                 answer_box.markdown(answer)
             elif event["type"] == "hitl":
                 st.session_state.pending_hitl = event.get("payload")
             elif event["type"] == "final":
+                thinking = False
                 final = event
                 answer = event.get("answer") or answer
                 activities = event.get("activities") or activities
                 answer_box.markdown(answer)
                 _render_activity(activity_box, activities)
             elif event["type"] == "error":
+                thinking = False
                 answer_box.error(event.get("message", "The request failed."))
+    if thinking:
+        answer_box.markdown(":shimmer[thinking...]")
     if final is None:
         return None
     final["answer"] = answer
@@ -207,15 +214,24 @@ with chat_col:
         st.warning(st.session_state.pending_hitl.get("reason", "Approval required."))
         approve, reject = st.columns(2)
         if approve.button("Approve reindex", type="primary"):
-            _send(None, {"approved": True}, activity_box, st.empty())
+            with chat_col:
+                with st.chat_message("assistant"):
+                    answer_box = st.empty()
+            _send(None, {"approved": True}, activity_box, answer_box)
             st.rerun()
         if reject.button("Reject"):
-            _send(None, {"approved": False}, activity_box, st.empty())
+            with chat_col:
+                with st.chat_message("assistant"):
+                    answer_box = st.empty()
+            _send(None, {"approved": False}, activity_box, answer_box)
             st.rerun()
 
     prompt = st.chat_input("Ask about policies, incidents, the directory, or a reindex")
     if prompt:
         with chat_col:
-            answer_box = st.empty()
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            with st.chat_message("assistant"):
+                answer_box = st.empty()
         _send(prompt, None, activity_box, answer_box)
         st.rerun()
